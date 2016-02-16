@@ -579,6 +579,10 @@ void simple_rl(void)
   }
 }
 
+void load_ingame_tiles() {
+  SMS_loadTiles(ship_til, 0, ship_til_size);
+}
+
 void load_font (void) {
   unsigned char i, j;
 	unsigned char buffer[32], *o, *d;
@@ -601,14 +605,10 @@ void load_font (void) {
 void main(void) {
   unsigned char i;
 
-  load_font();
+  load_ingame_tiles();
 
-  for (i=0;i<16;i++) {
-    SMS_setBGPaletteColor(i,0x00);    // black
-    SMS_setSpritePaletteColor(i,0x00);    // black
-  }
-  SMS_setBGPaletteColor(01,0x3f);     // white
-  SMS_setSpritePaletteColor(01,0x3f);     // white
+  SMS_loadBGPalette(ship_pal);
+  SMS_loadSpritePalette(ship_pal);
 
   title_screen();
   simple_rl();
