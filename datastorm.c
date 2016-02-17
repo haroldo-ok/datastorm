@@ -5,6 +5,12 @@
 #include "SMSlib/src/SMSlib.h"
 #include "gfx.h"
 
+#define ACTOR_MIN_X 8
+#define ACTOR_MAX_X (256 - 8)
+#define ACTOR_FRAME_TILE 4
+#define ACTOR_DIR_TILE 8
+#define ACTOR_TILE_SHIFT 4
+
 #define LANE_COUNT 7
 #define LANE_CHAR_HEIGHT 3
 #define LANE_TOP 1
@@ -13,8 +19,44 @@
 #define LANE_PIXEL_HEIGHT (LANE_CHAR_HEIGHT * 8)
 #define LANE_BASE_TILE 0xB0
 
+#define PLAYER_MIN_Y LANE_PIXEL_TOP_LIMIT
+#define PLAYER_CENTER_X 128
+#define PLAYER_WIDTH 16
+#define PLAYER_HEIGHT 16
+#define PLAYER_BASE_TILE 16
+
+unsigned int frame_timer;
+
+unsigned char player_x, player_y, player_frame;
+unsigned char player_fire_delay;
+unsigned char player_current_lane, player_target_lane;
+unsigned char player_target_y;
+unsigned char player_looking_left;
+
+void add_double_sprite(unsigned char x, unsigned char y, unsigned char tile) {
+  SMS_addSprite(x - 8, y, tile);
+  SMS_addSprite(x, y, tile + 2);
+}
+
+void draw_ship(unsigned char x, unsigned char y, unsigned char base_tile, unsigned char facing_right) {
+  if (frame_timer & 0x10) {
+    base_tile += ACTOR_FRAME_TILE;
+  }
+
+  if (facing_right) {
+    base_tile += ACTOR_DIR_TILE;
+  }
+
+  add_double_sprite(x, y, base_tile);
+}
+
+void draw_player_ship() {
+  draw_ship(player_x, player_y, PLAYER_BASE_TILE, !player_looking_left);
+}
+
 void load_ingame_tiles() {
   SMS_loadTiles(ship_til, 0, ship_til_size);
+  SMS_loadTiles(ship_til, 256, ship_til_size);
 }
 
 void draw_lanes() {
@@ -67,8 +109,18 @@ void draw_lanes() {
   }
 }
 
+void init_player() {
+  player_x = PLAYER_CENTER_X;
+  player_y = PLAYER_MIN_Y;
+  player_current_lane = 0;
+  player_target_lane = 0;
+}
+
 void main(void) {
-  unsigned char i;
+  init_player();
+
+  SMS_VDPturnOnFeature(VDPFEATURE_USETALLSPRITES);
+  SMS_VDPturnOffFeature(VDPFEATURE_HIDEFIRSTCOL);
 
   load_ingame_tiles();
 
@@ -80,7 +132,16 @@ void main(void) {
   SMS_displayOn();
 
   while (true) {
+    SMS_initSprites();
+
+    draw_player_ship();
+
+    SMS_finalizeSprites();
+
     SMS_waitForVBlank();
+    SMS_copySpritestoSAT();
+
+    frame_timer++;
   }
 }
 
