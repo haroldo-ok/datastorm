@@ -615,6 +615,6 @@ void main(void) {
 }
 
 SMS_EMBED_SEGA_ROM_HEADER(9999,0); // code 9999 hopefully free, here this means 'homebrew'
-SMS_EMBED_SDSC_HEADER(0,6, 2015,9,10, "Haroldo-OK\\2015", "SMS-Rogue",
-  "A roguelike for the Sega Master System - https://github.com/haroldo-ok/sms-rogue.\n"
+SMS_EMBED_SDSC_HEADER(0,3, 2016,2,16, "Haroldo-OK\\2016", "Data Storm",
+  "A fast paced shoot-em-up.\n"
   "Built using devkitSMS & SMSlib - https://github.com/sverx/devkitSMS");
