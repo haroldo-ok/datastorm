@@ -25,6 +25,14 @@
 #define PLAYER_HEIGHT 16
 #define PLAYER_BASE_TILE 16
 
+#define SHOT_FLAG_LEFT 1
+#define SHOT_FLAG_RIGHT 2
+#define SHOT_BASE_TILE 32
+
+typedef struct _shot {
+  unsigned char x, flag;
+} shot;
+
 const unsigned char lane_coords[] = { 0, LANE_PIXEL_HEIGHT, 2 * LANE_PIXEL_HEIGHT, 3 * LANE_PIXEL_HEIGHT, 4 * LANE_PIXEL_HEIGHT, 5 * LANE_PIXEL_HEIGHT, 6 * LANE_PIXEL_HEIGHT };
 
 int joy;
@@ -35,6 +43,8 @@ unsigned char player_fire_delay;
 unsigned char player_current_lane, player_target_lane;
 unsigned char player_target_y;
 unsigned char player_looking_left;
+
+shot shots[LANE_COUNT];
 
 void add_double_sprite(unsigned char x, unsigned char y, unsigned char tile) {
   SMS_addSprite(x - 8, y, tile);
@@ -116,6 +126,61 @@ void change_lane() {
   player_target_y = lane_coords[player_target_lane] + LANE_PIXEL_TOP_LIMIT;
 }
 
+void init_shots() {
+  unsigned char i;
+  shot *p;
+
+  for (i = 0, p = shots; i != LANE_COUNT; i++, p++) {
+    p->flag = 0;
+  }
+}
+
+void draw_shot(shot *p, unsigned char y) {
+  if (p->flag) {
+    draw_ship(p->x, y, SHOT_BASE_TILE, p->flag == SHOT_FLAG_RIGHT);
+  }
+}
+
+void draw_shots() {
+  unsigned char i, y;
+  shot *p;
+
+  for (i = 0, p = shots, y = LANE_PIXEL_TOP_LIMIT; i != LANE_COUNT; i++, p++, y += LANE_PIXEL_HEIGHT) {
+    draw_shot(p, y);
+  }
+}
+
+void move_shot(shot *p) {
+  if (p->flag) {
+    if (p->flag == SHOT_FLAG_LEFT) {
+      p->x -= 6;
+    } else {
+      p->x += 6;
+    }
+
+    if (p->x <= ACTOR_MIN_X || p->x >= ACTOR_MAX_X) {
+      p->flag = 0;
+    }
+  }
+}
+
+void move_shots() {
+  unsigned char i;
+  shot *p;
+
+  for (i = 0, p = shots; i != LANE_COUNT; i++, p++) {
+    move_shot(p);
+  }
+}
+
+void fire() {
+  shot *p = shots + player_current_lane;
+  if (!p->flag) {
+    p->x = PLAYER_CENTER_X;
+    p->flag = player_looking_left ? SHOT_FLAG_LEFT : SHOT_FLAG_RIGHT;
+  }
+}
+
 void init_player() {
   player_x = PLAYER_CENTER_X;
   player_y = PLAYER_MIN_Y;
@@ -135,6 +200,7 @@ void main(void) {
   SMS_loadSpritePalette(ship_pal);
 
   draw_lanes();
+  init_shots();
 
   SMS_displayOn();
 
@@ -169,11 +235,18 @@ void main(void) {
       }
     }
 
+    fire();
+
+    // Shots
+
+    move_shots();
+
     // Draw
 
     SMS_initSprites();
 
     draw_player_ship();
+    draw_shots();
 
     SMS_finalizeSprites();
 
