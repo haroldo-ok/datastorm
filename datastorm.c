@@ -25,6 +25,9 @@
 #define PLAYER_HEIGHT 16
 #define PLAYER_BASE_TILE 16
 
+const unsigned char lane_coords[] = { 0, LANE_PIXEL_HEIGHT, 2 * LANE_PIXEL_HEIGHT, 3 * LANE_PIXEL_HEIGHT, 4 * LANE_PIXEL_HEIGHT, 5 * LANE_PIXEL_HEIGHT, 6 * LANE_PIXEL_HEIGHT };
+
+int joy;
 unsigned int frame_timer;
 
 unsigned char player_x, player_y, player_frame;
@@ -109,6 +112,10 @@ void draw_lanes() {
   }
 }
 
+void change_lane() {
+  player_target_y = lane_coords[player_target_lane] + LANE_PIXEL_TOP_LIMIT;
+}
+
 void init_player() {
   player_x = PLAYER_CENTER_X;
   player_y = PLAYER_MIN_Y;
@@ -132,6 +139,38 @@ void main(void) {
   SMS_displayOn();
 
   while (true) {
+    // Player
+
+    joy = SMS_getKeysStatus();
+
+    if (joy & PORT_A_KEY_LEFT) {
+      player_looking_left = true;
+    } else if (joy & PORT_A_KEY_RIGHT) {
+      player_looking_left = false;
+    }
+
+    if (player_current_lane == player_target_lane) {
+      if ((joy & PORT_A_KEY_UP) && (player_current_lane > 0)) {
+        player_target_lane--;
+        change_lane();
+      } else if ((joy & PORT_A_KEY_DOWN) && (player_current_lane < LANE_COUNT - 1)) {
+        player_target_lane++;
+        change_lane();
+      }
+    } else {
+      if (player_y != player_target_y) {
+        if (player_y < player_target_y) {
+          player_y += 12;
+        } else {
+          player_y -= 12;
+        }
+      } else {
+        player_current_lane = player_target_lane;
+      }
+    }
+
+    // Draw
+
     SMS_initSprites();
 
     draw_player_ship();
