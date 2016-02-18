@@ -41,8 +41,8 @@
 #define ENEMY_TYPE_PHANTOM 7
 
 #define SCORE_BASE_TILE 0xB6
-#define SCORE_TOP (192 - 16)
-#define SCORE_LEFT (128 - 4 * 8)
+#define SCORE_TOP 22
+#define SCORE_LEFT 13
 
 typedef struct _shot {
   unsigned int x;
@@ -319,9 +319,13 @@ void init_player() {
 }
 
 void draw_score() {
-  unsigned char i, x;
-  for (i = 0, x = SCORE_LEFT; i != 6; i++, x += 8) {
-    SMS_addSprite(x, SCORE_TOP, (i << 1) + SCORE_BASE_TILE);
+  unsigned char i, j, y, t;
+
+  for (j = 0, y = SCORE_TOP, t = SCORE_BASE_TILE; j != 2; j++, y++, t++) {
+    SMS_setNextTileatXY(SCORE_LEFT, y);
+    for (i = 0; i != 6; i++) {
+      SMS_setTile((i << 1) + t);
+    }
   }
 }
 
@@ -340,6 +344,8 @@ void main(void) {
   draw_lanes();
   init_enemies();
   init_shots();
+
+  draw_score();
 
   SMS_displayOn();
 
@@ -388,7 +394,6 @@ void main(void) {
     draw_player_ship();
     draw_shots();
     draw_enemies();
-    draw_score();
 
     SMS_finalizeSprites();
 
