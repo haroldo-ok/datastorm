@@ -29,9 +29,25 @@
 #define SHOT_FLAG_RIGHT 2
 #define SHOT_BASE_TILE 32
 
+#define ENEMY_BASE_TILE 48
+#define ENEMY_TYPE_MASK 7
+#define ENEMY_TYPE_SLOW 0
+#define ENEMY_TYPE_MEDIUM 1
+#define ENEMY_TYPE_FAST 2
+#define ENEMY_TYPE_PELLET 3
+#define ENEMY_TYPE_BALL 4
+#define ENEMY_TYPE_ARROW 5
+#define ENEMY_TYPE_TANK 6
+#define ENEMY_TYPE_PHANTOM 7
+
 typedef struct _shot {
   unsigned char x, flag;
 } shot;
+
+typedef struct _enemy {
+  unsigned char x, type;
+  char spd, timer;
+} enemy;
 
 const unsigned char lane_coords[] = { 0, LANE_PIXEL_HEIGHT, 2 * LANE_PIXEL_HEIGHT, 3 * LANE_PIXEL_HEIGHT, 4 * LANE_PIXEL_HEIGHT, 5 * LANE_PIXEL_HEIGHT, 6 * LANE_PIXEL_HEIGHT };
 
@@ -45,6 +61,7 @@ unsigned char player_target_y;
 unsigned char player_looking_left;
 
 shot shots[LANE_COUNT];
+enemy enemies[LANE_COUNT];
 
 void add_double_sprite(unsigned char x, unsigned char y, unsigned char tile) {
   SMS_addSprite(x - 8, y, tile);
@@ -181,6 +198,80 @@ void fire() {
   }
 }
 
+void init_enemies() {
+  unsigned int i;
+  enemy *p;
+
+  for (i = 0, p = enemies; i != LANE_COUNT; i++, p++) {
+    p->spd = 0;
+  }
+}
+
+void draw_enemy(enemy *p, unsigned char y) {
+  if (p->spd) {
+    draw_ship(p->x, y, ENEMY_BASE_TILE + (p->type << ACTOR_TILE_SHIFT), p->spd > 0);
+  }
+}
+
+void draw_enemies() {
+  unsigned int i, y;
+  enemy *p;
+
+  for (i = 0, p = enemies, y = LANE_PIXEL_TOP_LIMIT; i != LANE_COUNT; i++, p++, y += LANE_PIXEL_HEIGHT) {
+    draw_enemy(p, y);
+  }
+}
+
+void move_enemies() {
+  unsigned char i;
+  enemy *p;
+
+  for (i = 0, p = enemies; i != LANE_COUNT; i++, p++) {
+    if (!p->spd) {
+      if ((rand() & 0x1F) == 1) {
+        // Spawns a new enemy
+        if (rand() & 1) {
+          p->x = ACTOR_MIN_X + 1;
+          p->spd = 12;
+        } else {
+          p->x = ACTOR_MAX_X - 1;
+          p->spd = -12;
+        }
+        p->type = rand() & ENEMY_TYPE_MASK;
+      }
+    } else {
+      //collide_enemy(p, i);
+
+      if (p->type == ENEMY_TYPE_PELLET) {
+        p->timer = 1;
+      } else {
+        p->timer += p->spd;
+        p->x += p->timer >> 4;
+        p->timer &= 0x0F;
+      }
+
+      // Enemy moved out?
+      if (p->x <= ACTOR_MIN_X || p->x >= ACTOR_MAX_X) {
+        if (p->type == ENEMY_TYPE_BALL || p->type == ENEMY_TYPE_TANK || p->type == ENEMY_TYPE_ARROW) {
+          // Turn around
+          p->x = p->spd < 0 ? ACTOR_MIN_X + 1 : ACTOR_MAX_X - 1;
+          p->spd = -p->spd;
+
+          if (p->type == ENEMY_TYPE_ARROW) {
+            // Become a tank
+            p->type = ENEMY_TYPE_TANK;
+          }
+        } else {
+          // Disappear
+          p->spd = 0;
+        }
+      }
+
+      //collide_enemy(p, i);
+    }
+  }
+}
+
 void init_player() {
   player_x = PLAYER_CENTER_X;
   player_y = PLAYER_MIN_Y;
@@ -200,6 +291,7 @@ void main(void) {
   SMS_loadSpritePalette(ship_pal);
 
   draw_lanes();
+  init_enemies();
   init_shots();
 
   SMS_displayOn();
@@ -240,6 +332,7 @@ void main(void) {
     // Shots
 
     move_shots();
+    move_enemies();
 
     // Draw
 
@@ -247,6 +340,7 @@ void main(void) {
 
     draw_player_ship();
     draw_shots();
+    draw_enemies();
 
     SMS_finalizeSprites();
 
