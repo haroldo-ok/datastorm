@@ -40,6 +40,10 @@
 #define ENEMY_TYPE_TANK 6
 #define ENEMY_TYPE_PHANTOM 7
 
+#define SCORE_BASE_TILE 0xB6
+#define SCORE_TOP (192 - 16)
+#define SCORE_LEFT (128 - 4 * 8)
+
 typedef struct _shot {
   unsigned int x;
   unsigned char flag;
@@ -88,7 +92,6 @@ void draw_player_ship() {
 
 void load_ingame_tiles() {
   SMS_loadTiles(ship_til, 0, ship_til_size);
-  SMS_loadTiles(ship_til, 256, ship_til_size);
 }
 
 void draw_lanes() {
@@ -315,11 +318,19 @@ void init_player() {
   player_target_lane = 0;
 }
 
+void draw_score() {
+  unsigned char i, x;
+  for (i = 0, x = SCORE_LEFT; i != 6; i++, x += 8) {
+    SMS_addSprite(x, SCORE_TOP, (i << 1) + SCORE_BASE_TILE);
+  }
+}
+
 void main(void) {
   init_player();
 
   SMS_VDPturnOnFeature(VDPFEATURE_USETALLSPRITES);
   SMS_VDPturnOffFeature(VDPFEATURE_HIDEFIRSTCOL);
+  SMS_useFirstHalfTilesforSprites(true);
 
   load_ingame_tiles();
 
@@ -377,6 +388,7 @@ void main(void) {
     draw_player_ship();
     draw_shots();
     draw_enemies();
+    draw_score();
 
     SMS_finalizeSprites();
 
