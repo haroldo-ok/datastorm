@@ -41,11 +41,13 @@
 #define ENEMY_TYPE_PHANTOM 7
 
 typedef struct _shot {
-  unsigned char x, flag;
+  unsigned int x;
+  unsigned char flag;
 } shot;
 
 typedef struct _enemy {
-  unsigned char x, type;
+  unsigned int x;
+  unsigned char type;
   char spd, timer;
 } enemy;
 
@@ -222,6 +224,40 @@ void draw_enemies() {
   }
 }
 
+void collide_enemy(enemy *e, unsigned char lane) {
+  shot *s = shots + lane;
+
+  if (e->type == ENEMY_TYPE_PHANTOM) {
+    // Phantom ships are invulnerable
+    return;
+  }
+
+  if (s->flag) {
+    if (s->x - e->x <= 16 || e->x - s->x <= 16) {
+      if (e->type == ENEMY_TYPE_TANK) {
+        // Tanks can only be hit from the back
+        if (e->spd < 0) {
+          if (s->flag == SHOT_FLAG_LEFT) {
+            // Both facing left? Blam!
+            e->spd = 0;
+          }
+        } else {
+          if (s->flag == SHOT_FLAG_RIGHT) {
+            // Both facing right? Blam!
+            e->spd = 0;
+          }
+        }
+      } else {
+        // Other enemies will simply be dead.
+        e->spd = 0;
+      }
+
+      // Removes the shot
+      s->flag = 0;
+    }
+  }
+}
+
 void move_enemies() {
   unsigned char i;
   enemy *p;
@@ -240,7 +276,7 @@ void move_enemies() {
         p->type = rand() & ENEMY_TYPE_MASK;
       }
     } else {
-      //collide_enemy(p, i);
+      collide_enemy(p, i);
 
       if (p->type == ENEMY_TYPE_PELLET) {
         p->timer = 1;
@@ -267,7 +303,7 @@ void move_enemies() {
         }
       }
 
-      //collide_enemy(p, i);
+      collide_enemy(p, i);
     }
   }
 }
