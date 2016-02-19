@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "SMSlib/src/SMSlib.h"
+#include "PSGlib/src/PSGlib.h"
 #include "gfx.h"
 
 #define ACTOR_MIN_X 8
@@ -200,6 +201,8 @@ void fire() {
   if (!p->flag) {
     p->x = PLAYER_CENTER_X;
     p->flag = player_looking_left ? SHOT_FLAG_LEFT : SHOT_FLAG_RIGHT;
+
+     PSGPlayNoRepeat(player_shot_psg);
   }
 }
 
@@ -399,6 +402,9 @@ void main(void) {
 
     SMS_waitForVBlank();
     SMS_copySpritestoSAT();
+
+    PSGFrame();
+    PSGSFXFrame();
 
     frame_timer++;
   }
