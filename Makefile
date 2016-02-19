@@ -6,7 +6,7 @@ BINS	= datastorm.sms
 
 all:	$(BINS)
 
-gfx.c: gfx/font.fnt gfx/ship.pal gfx/ship.til gfx/player_shot.psg
+gfx.c: gfx/font.fnt gfx/ship.pal gfx/ship.til gfx/player_shot.psg gfx/enemy_death.psg
 	folder2c gfx gfx
 
 datastorm.rel: gfx.c

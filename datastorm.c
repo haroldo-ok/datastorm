@@ -230,6 +230,11 @@ void draw_enemies() {
   }
 }
 
+void kill_enemy(enemy *e) {
+  e->spd = 0;
+  PSGSFXPlay(enemy_death_psg, SFX_CHANNEL2 | SFX_CHANNEL3);
+}
+
 void collide_enemy(enemy *e, unsigned char lane) {
   shot *s = shots + lane;
 
@@ -245,17 +250,17 @@ void collide_enemy(enemy *e, unsigned char lane) {
         if (e->spd < 0) {
           if (s->flag == SHOT_FLAG_LEFT) {
             // Both facing left? Blam!
-            e->spd = 0;
+            kill_enemy(e);
           }
         } else {
           if (s->flag == SHOT_FLAG_RIGHT) {
             // Both facing right? Blam!
-            e->spd = 0;
+            kill_enemy(e);
           }
         }
       } else {
         // Other enemies will simply be dead.
-        e->spd = 0;
+        kill_enemy(e);
       }
 
       // Removes the shot
