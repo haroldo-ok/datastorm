@@ -230,6 +230,11 @@ void draw_enemies() {
   }
 }
 
+void kill_player() {
+  init_enemies();
+  init_shots();
+}
+
 void kill_enemy(enemy *e) {
   e->spd = 0;
   PSGSFXPlay(enemy_death_psg, SFX_CHANNEL2 | SFX_CHANNEL3);
@@ -237,6 +242,10 @@ void kill_enemy(enemy *e) {
 
 void collide_enemy(enemy *e, unsigned char lane) {
   shot *s = shots + lane;
+
+  if (lane == player_current_lane && e->x > PLAYER_CENTER_X - 8 && e->x < PLAYER_CENTER_X + 8) {
+    kill_player();
+  }
 
   if (e->type == ENEMY_TYPE_PHANTOM) {
     // Phantom ships are invulnerable
