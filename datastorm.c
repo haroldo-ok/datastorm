@@ -25,6 +25,8 @@
 #define PLAYER_WIDTH 16
 #define PLAYER_HEIGHT 16
 #define PLAYER_BASE_TILE 16
+#define PLAYER_DEATH_BASE_TILE 4
+#define PLAYER_DEATH_FRAMES 3
 
 #define SHOT_FLAG_LEFT 1
 #define SHOT_FLAG_RIGHT 2
@@ -230,9 +232,43 @@ void draw_enemies() {
   }
 }
 
+void wait_frames(int count) {
+    for (; count; count--) {
+      SMS_waitForVBlank();
+      PSGFrame();
+      PSGSFXFrame();
+    }
+}
+
+void draw_player_death_frame(unsigned char frame) {
+  SMS_initSprites();
+
+  draw_ship(player_x, player_y, PLAYER_DEATH_BASE_TILE + (frame << 2), 0);
+
+  SMS_finalizeSprites();
+  SMS_waitForVBlank();
+  SMS_copySpritestoSAT();
+
+  PSGFrame();
+  PSGSFXFrame();
+
+  wait_frames(10);
+}
+
 void kill_player() {
+  unsigned char i;
+
   init_enemies();
   init_shots();
+  player_looking_left = true;
+
+  for (i = 0; i != PLAYER_DEATH_FRAMES; i++) {
+    draw_player_death_frame(i);
+  }
+
+  for (i = PLAYER_DEATH_FRAMES; i != 0; i--) {
+    draw_player_death_frame(i - 1);
+  }
 }
 
 void kill_enemy(enemy *e) {
