@@ -73,6 +73,11 @@ bool player_dead;
 shot shots[LANE_COUNT];
 enemy enemies[LANE_COUNT];
 
+// Former local variables converted to globals to see if it speeds up things
+unsigned char g_i, g_x, g_y, g_lane;
+shot *shot_p;
+enemy *enm_p;
+
 void add_double_sprite(unsigned char x, unsigned char y, unsigned char tile) {
   SMS_addSprite(x - 8, y, tile);
   SMS_addSprite(x, y, tile + 2);
@@ -161,41 +166,35 @@ void init_shots() {
   }
 }
 
-void draw_shot(shot *p, unsigned char y) {
-  if (p->flag) {
-    draw_ship(p->x, y, SHOT_BASE_TILE, p->flag == SHOT_FLAG_RIGHT);
+void draw_shot() {
+  if (shot_p->flag) {
+    draw_ship(shot_p->x, g_y, SHOT_BASE_TILE, shot_p->flag == SHOT_FLAG_RIGHT);
   }
 }
 
 void draw_shots() {
-  unsigned char i, y;
-  shot *p;
-
-  for (i = 0, p = shots, y = LANE_PIXEL_TOP_LIMIT; i != LANE_COUNT; i++, p++, y += LANE_PIXEL_HEIGHT) {
-    draw_shot(p, y);
+  for (g_i = 0, shot_p = shots, g_y = LANE_PIXEL_TOP_LIMIT; g_i != LANE_COUNT; g_i++, shot_p++, g_y += LANE_PIXEL_HEIGHT) {
+    draw_shot();
   }
 }
 
-void move_shot(shot *p) {
-  if (p->flag) {
-    if (p->flag == SHOT_FLAG_LEFT) {
-      p->x -= 6;
+void move_shot() {
+  if (shot_p->flag) {
+    if (shot_p->flag == SHOT_FLAG_LEFT) {
+      shot_p->x -= 6;
     } else {
-      p->x += 6;
+      shot_p->x += 6;
     }
 
-    if (p->x <= ACTOR_MIN_X || p->x >= ACTOR_MAX_X) {
-      p->flag = 0;
+    if (shot_p->x <= ACTOR_MIN_X || shot_p->x >= ACTOR_MAX_X) {
+      shot_p->flag = 0;
     }
   }
 }
 
 void move_shots() {
-  unsigned char i;
-  shot *p;
-
-  for (i = 0, p = shots; i != LANE_COUNT; i++, p++) {
-    move_shot(p);
+  for (g_i = 0, shot_p = shots; g_i != LANE_COUNT; g_i++, shot_p++) {
+    move_shot();
   }
 }
 
@@ -218,18 +217,15 @@ void init_enemies() {
   }
 }
 
-void draw_enemy(enemy *p, unsigned char y) {
-  if (p->spd) {
-    draw_ship(p->x, y, ENEMY_BASE_TILE + (p->type << ACTOR_TILE_SHIFT), p->spd > 0);
+void draw_enemy() {
+  if (enm_p->spd) {
+    draw_ship(enm_p->x, g_y, ENEMY_BASE_TILE + (enm_p->type << ACTOR_TILE_SHIFT), enm_p->spd > 0);
   }
 }
 
 void draw_enemies() {
-  unsigned int i, y;
-  enemy *p;
-
-  for (i = 0, p = enemies, y = LANE_PIXEL_TOP_LIMIT; i != LANE_COUNT; i++, p++, y += LANE_PIXEL_HEIGHT) {
-    draw_enemy(p, y);
+  for (g_i = 0, enm_p = enemies, g_y = LANE_PIXEL_TOP_LIMIT; g_i != LANE_COUNT; g_i++, enm_p++, g_y += LANE_PIXEL_HEIGHT) {
+    draw_enemy();
   }
 }
 
@@ -280,96 +276,93 @@ void kill_player() {
   player_dead = false;
 }
 
-void kill_enemy(enemy *e) {
-  e->spd = 0;
+void kill_enemy() {
+  enm_p->spd = 0;
   PSGSFXPlay(enemy_death_psg, SFX_CHANNEL2 | SFX_CHANNEL3);
 }
 
-void collide_enemy(enemy *e, unsigned char lane) {
-  shot *s = shots + lane;
+void collide_enemy() {
+  shot_p = shots + g_lane;
 
-  if (lane == player_current_lane && e->x > PLAYER_CENTER_X - 8 && e->x < PLAYER_CENTER_X + 8) {
+  if (g_lane == player_current_lane && enm_p->x > PLAYER_CENTER_X - 8 && enm_p->x < PLAYER_CENTER_X + 8) {
     player_dead = true;
     return;
   }
 
-  if (e->type == ENEMY_TYPE_PHANTOM) {
+  if (enm_p->type == ENEMY_TYPE_PHANTOM) {
     // Phantom ships are invulnerable
     return;
   }
 
-  if (s->flag) {
-    if (s->x - e->x <= 16 || e->x - s->x <= 16) {
-      if (e->type == ENEMY_TYPE_TANK) {
+  if (shot_p->flag) {
+    if (shot_p->x - enm_p->x <= 16 || enm_p->x - shot_p->x <= 16) {
+      if (enm_p->type == ENEMY_TYPE_TANK) {
         // Tanks can only be hit from the back
-        if (e->spd < 0) {
-          if (s->flag == SHOT_FLAG_LEFT) {
+        if (enm_p->spd < 0) {
+          if (shot_p->flag == SHOT_FLAG_LEFT) {
             // Both facing left? Blam!
-            kill_enemy(e);
+            kill_enemy();
           }
         } else {
-          if (s->flag == SHOT_FLAG_RIGHT) {
+          if (shot_p->flag == SHOT_FLAG_RIGHT) {
             // Both facing right? Blam!
-            kill_enemy(e);
+            kill_enemy();
           }
         }
       } else {
         // Other enemies will simply be dead.
-        kill_enemy(e);
+        kill_enemy();
       }
 
       // Removes the shot
-      s->flag = 0;
+      shot_p->flag = 0;
     }
   }
 }
 
 void move_enemies() {
-  unsigned char i;
-  enemy *p;
-
-  for (i = 0, p = enemies; i != LANE_COUNT; i++, p++) {
-    if (!p->spd) {
+  for (g_lane = 0, enm_p = enemies; g_lane != LANE_COUNT; g_lane++, enm_p++) {
+    if (!enm_p->spd) {
       if ((rand() & 0x1F) == 1) {
         // Spawns a new enemy
         if (rand() & 1) {
-          p->x = ACTOR_MIN_X + 1;
-          p->spd = 12;
+          enm_p->x = ACTOR_MIN_X + 1;
+          enm_p->spd = 12;
         } else {
-          p->x = ACTOR_MAX_X - 1;
-          p->spd = -12;
+          enm_p->x = ACTOR_MAX_X - 1;
+          enm_p->spd = -12;
         }
-        p->type = rand() & ENEMY_TYPE_MASK;
+        enm_p->type = rand() & ENEMY_TYPE_MASK;
       }
     } else {
-      collide_enemy(p, i);
+      collide_enemy();
 
-      if (p->type == ENEMY_TYPE_PELLET) {
-        p->timer = 1;
+      if (enm_p->type == ENEMY_TYPE_PELLET) {
+        enm_p->timer = 1;
       } else {
-        p->timer += p->spd;
-        p->x += p->timer >> 4;
-        p->timer &= 0x0F;
+        enm_p->timer += enm_p->spd;
+        enm_p->x += enm_p->timer >> 4;
+        enm_p->timer &= 0x0F;
       }
 
       // Enemy moved out?
-      if (p->x <= ACTOR_MIN_X || p->x >= ACTOR_MAX_X) {
-        if (p->type == ENEMY_TYPE_BALL || p->type == ENEMY_TYPE_TANK || p->type == ENEMY_TYPE_ARROW) {
+      if (enm_p->x <= ACTOR_MIN_X || enm_p->x >= ACTOR_MAX_X) {
+        if (enm_p->type == ENEMY_TYPE_BALL || enm_p->type == ENEMY_TYPE_TANK || enm_p->type == ENEMY_TYPE_ARROW) {
           // Turn around
-          p->x = p->spd < 0 ? ACTOR_MIN_X + 1 : ACTOR_MAX_X - 1;
-          p->spd = -p->spd;
+          enm_p->x = enm_p->spd < 0 ? ACTOR_MIN_X + 1 : ACTOR_MAX_X - 1;
+          enm_p->spd = -enm_p->spd;
 
-          if (p->type == ENEMY_TYPE_ARROW) {
+          if (enm_p->type == ENEMY_TYPE_ARROW) {
             // Become a tank
-            p->type = ENEMY_TYPE_TANK;
+            enm_p->type = ENEMY_TYPE_TANK;
           }
         } else {
           // Disappear
-          p->spd = 0;
+          enm_p->spd = 0;
         }
       }
 
-      collide_enemy(p, i);
+      collide_enemy();
     }
   }
 }
