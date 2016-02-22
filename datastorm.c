@@ -26,7 +26,7 @@
 #define PLAYER_HEIGHT 16
 #define PLAYER_BASE_TILE 16
 #define PLAYER_DEATH_BASE_TILE 4
-#define PLAYER_DEATH_FRAMES 3
+#define PLAYER_DEATH_FRAMES 2
 
 #define SHOT_FLAG_LEFT 1
 #define SHOT_FLAG_RIGHT 2
@@ -252,11 +252,15 @@ void draw_player_death_frame(unsigned char frame) {
   PSGFrame();
   PSGSFXFrame();
 
-  wait_frames(10);
+  wait_frames(18);
 }
 
 void kill_player() {
   unsigned char i;
+
+  PSGStop();
+  PSGSFXStop();
+  PSGPlayNoRepeat(player_death_psg);
 
   init_enemies();
   init_shots();
@@ -265,6 +269,8 @@ void kill_player() {
   for (i = 0; i != PLAYER_DEATH_FRAMES; i++) {
     draw_player_death_frame(i);
   }
+
+  wait_frames(18);
 
   for (i = PLAYER_DEATH_FRAMES; i != 0; i--) {
     draw_player_death_frame(i - 1);
@@ -281,6 +287,7 @@ void collide_enemy(enemy *e, unsigned char lane) {
 
   if (lane == player_current_lane && e->x > PLAYER_CENTER_X - 8 && e->x < PLAYER_CENTER_X + 8) {
     kill_player();
+    return;
   }
 
   if (e->type == ENEMY_TYPE_PHANTOM) {
