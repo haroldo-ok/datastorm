@@ -68,6 +68,7 @@ unsigned char player_fire_delay;
 unsigned char player_current_lane, player_target_lane;
 unsigned char player_target_y;
 unsigned char player_looking_left;
+bool player_dead;
 
 shot shots[LANE_COUNT];
 enemy enemies[LANE_COUNT];
@@ -275,6 +276,8 @@ void kill_player() {
   for (i = PLAYER_DEATH_FRAMES; i != 0; i--) {
     draw_player_death_frame(i - 1);
   }
+
+  player_dead = false;
 }
 
 void kill_enemy(enemy *e) {
@@ -286,7 +289,7 @@ void collide_enemy(enemy *e, unsigned char lane) {
   shot *s = shots + lane;
 
   if (lane == player_current_lane && e->x > PLAYER_CENTER_X - 8 && e->x < PLAYER_CENTER_X + 8) {
-    kill_player();
+    player_dead = true;
     return;
   }
 
@@ -376,6 +379,7 @@ void init_player() {
   player_y = PLAYER_MIN_Y;
   player_current_lane = 0;
   player_target_lane = 0;
+  player_dead = false;
 }
 
 void draw_score() {
@@ -464,6 +468,10 @@ void main(void) {
     PSGSFXFrame();
 
     frame_timer++;
+
+    if (player_dead) {
+      kill_player();
+    }
   }
 }
 
