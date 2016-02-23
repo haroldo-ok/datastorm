@@ -282,6 +282,17 @@ void kill_enemy() {
   PSGSFXPlay(enemy_death_psg, SFX_CHANNEL2 | SFX_CHANNEL3);
 }
 
+void spawn_enemy(unsigned char type, bool from_left) {
+  if (from_left) {
+    enm_p->x = ACTOR_MIN_X + 1;
+    enm_p->spd = 12;
+  } else {
+    enm_p->x = ACTOR_MAX_X - 1;
+    enm_p->spd = -12;
+  }
+  enm_p->type = type;
+}
+
 void collide_enemy() {
   shot_p = shots + g_lane;
 
@@ -289,6 +300,7 @@ void collide_enemy() {
     if (enm_p->type == ENEMY_TYPE_PELLET) {
       // Pellets act as bonuses
       kill_enemy();
+      spawn_enemy(ENEMY_TYPE_PHANTOM, enm_p->x > PLAYER_CENTER_X);
     } else {
       // Other enemies are lethal.
       player_dead = true;
@@ -332,14 +344,7 @@ void move_enemies() {
     if (!enm_p->spd) {
       if ((rand() & 0x1F) == 1) {
         // Spawns a new enemy
-        if (rand() & 1) {
-          enm_p->x = ACTOR_MIN_X + 1;
-          enm_p->spd = 12;
-        } else {
-          enm_p->x = ACTOR_MAX_X - 1;
-          enm_p->spd = -12;
-        }
-        enm_p->type = rand() & ENEMY_TYPE_MASK;
+        spawn_enemy(rand() & ENEMY_TYPE_MASK, rand() & 1);
       }
     } else {
       collide_enemy();
