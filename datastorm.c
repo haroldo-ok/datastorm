@@ -201,7 +201,7 @@ void move_shots() {
 void fire() {
   shot *p = shots + player_current_lane;
   if (!p->flag) {
-    p->x = PLAYER_CENTER_X;
+    p->x = player_x;
     p->flag = player_looking_left ? SHOT_FLAG_LEFT : SHOT_FLAG_RIGHT;
 
      PSGPlayNoRepeat(player_shot_psg);
@@ -273,6 +273,7 @@ void kill_player() {
     draw_player_death_frame(i - 1);
   }
 
+  player_x = PLAYER_CENTER_X;
   player_dead = false;
 }
 
@@ -284,13 +285,19 @@ void kill_enemy() {
 void collide_enemy() {
   shot_p = shots + g_lane;
 
-  if (g_lane == player_current_lane && enm_p->x > PLAYER_CENTER_X - 8 && enm_p->x < PLAYER_CENTER_X + 8) {
-    player_dead = true;
+  if (g_lane == player_current_lane && enm_p->x > player_x - 8 && enm_p->x < player_x + 8) {
+    if (enm_p->type == ENEMY_TYPE_PELLET) {
+      // Pellets act as bonuses
+      kill_enemy();
+    } else {
+      // Other enemies are lethal.
+      player_dead = true;
+    }
     return;
   }
 
-  if (enm_p->type == ENEMY_TYPE_PHANTOM) {
-    // Phantom ships are invulnerable
+  if (enm_p->type == ENEMY_TYPE_PHANTOM || enm_p->type == ENEMY_TYPE_PELLET) {
+    // Phantom ships and pellets are invulnerable
     return;
   }
 
@@ -418,14 +425,28 @@ void main(void) {
     }
 
     if (player_current_lane == player_target_lane) {
-      if ((joy & PORT_A_KEY_UP) && (player_current_lane > 0)) {
-        player_target_lane--;
-        change_lane();
-      } else if ((joy & PORT_A_KEY_DOWN) && (player_current_lane < LANE_COUNT - 1)) {
-        player_target_lane++;
-        change_lane();
+      // Allow to move left or right if there's a pellet on the current lane
+      enm_p = enemies + player_current_lane;
+      if (enm_p->spd && enm_p->type == ENEMY_TYPE_PELLET || player_x != PLAYER_CENTER_X) {
+        if ((joy & PORT_A_KEY_LEFT) && (player_x > ACTOR_MIN_X)) {
+          player_x -= 4;
+        } else if ((joy & PORT_A_KEY_RIGHT) && (player_x < ACTOR_MAX_X)) {
+          player_x += 4;
+        }
+      }
+
+      if (player_x == PLAYER_CENTER_X) {
+        // Move up or down the lanes according to joypad command
+        if ((joy & PORT_A_KEY_UP) && (player_current_lane > 0)) {
+          player_target_lane--;
+          change_lane();
+        } else if ((joy & PORT_A_KEY_DOWN) && (player_current_lane < LANE_COUNT - 1)) {
+          player_target_lane++;
+          change_lane();
+        }
       }
     } else {
+      // Move towards the targeted lane
       if (player_y != player_target_y) {
         if (player_y < player_target_y) {
           player_y += 12;
