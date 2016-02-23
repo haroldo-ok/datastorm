@@ -46,6 +46,7 @@
 #define SCORE_BASE_TILE 0xB6
 #define SCORE_TOP 22
 #define SCORE_LEFT 13
+#define SCORE_DIGITS 6
 
 typedef struct _shot {
   unsigned int x;
@@ -69,6 +70,10 @@ unsigned char player_current_lane, player_target_lane;
 unsigned char player_target_y;
 unsigned char player_looking_left;
 bool player_dead;
+
+unsigned char score_digits[SCORE_DIGITS];
+unsigned int score_tiles[2][SCORE_DIGITS];
+bool score_needs_update;
 
 shot shots[LANE_COUNT];
 enemy enemies[LANE_COUNT];
@@ -277,8 +282,65 @@ void kill_player() {
   player_dead = false;
 }
 
+void prepare_score() {
+  unsigned char i;
+  unsigned char *sc_p;
+  unsigned int *st_p, *st_p2;
+
+  if (!score_needs_update) {
+    return;
+  }
+
+  st_p = score_tiles[0];
+  st_p2 = score_tiles[1];
+  for (i = 0, sc_p = score_digits; i != SCORE_DIGITS; i++, sc_p++, st_p++, st_p2++) {
+    *st_p = (*sc_p << 1) + SCORE_BASE_TILE;
+    *st_p2 = *st_p + 1;
+  }
+}
+
+void increase_score(unsigned int how_much) {
+  unsigned char *sc_p = score_digits + SCORE_DIGITS - 2;
+
+  while (how_much) {
+    *sc_p += how_much;
+    how_much = 0;
+
+    while (*sc_p > 9) {
+      *sc_p -= 10;
+      how_much++;
+    }
+
+    sc_p--;
+  }
+
+  score_needs_update = true;
+}
+
+void init_score() {
+  unsigned char i;
+  unsigned char *sc_p;
+
+  for (i = 0, sc_p = score_digits; i != SCORE_DIGITS; i++, sc_p++) {
+    *sc_p = 0;
+  }
+
+  score_needs_update = true;
+  prepare_score();
+}
+
+void draw_score() {
+  if (!score_needs_update) {
+    return;
+  }
+
+  SMS_loadTileMapArea(SCORE_LEFT, SCORE_TOP, *score_tiles, SCORE_DIGITS, 2);
+  score_needs_update = false;
+}
+
 void kill_enemy() {
   enm_p->spd = 0;
+  increase_score(1);
   PSGSFXPlay(enemy_death_psg, SFX_CHANNEL2 | SFX_CHANNEL3);
 }
 
@@ -387,18 +449,8 @@ void init_player() {
   player_dead = false;
 }
 
-void draw_score() {
-  unsigned char i, j, y, t;
-
-  for (j = 0, y = SCORE_TOP, t = SCORE_BASE_TILE; j != 2; j++, y++, t++) {
-    SMS_setNextTileatXY(SCORE_LEFT, y);
-    for (i = 0; i != 6; i++) {
-      SMS_setTile((i << 1) + t);
-    }
-  }
-}
-
 void main(void) {
+  init_score();
   init_player();
 
   SMS_VDPturnOnFeature(VDPFEATURE_USETALLSPRITES);
@@ -469,6 +521,7 @@ void main(void) {
 
     move_shots();
     move_enemies();
+    prepare_score();
 
     // Draw
 
@@ -482,6 +535,7 @@ void main(void) {
 
     SMS_waitForVBlank();
     SMS_copySpritestoSAT();
+    draw_score();
 
     PSGFrame();
     PSGSFXFrame();
