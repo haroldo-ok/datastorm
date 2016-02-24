@@ -51,6 +51,11 @@
 
 #define LIFE_BASE_TILE 0xCA
 
+#define STATE_DEMO 1
+#define STATE_GAME_START 2
+#define STATE_NEXT_STAGE 3
+#define STATE_PLAY 4
+
 typedef struct _shot {
   unsigned int x;
   unsigned char flag;
@@ -81,6 +86,9 @@ bool score_needs_update;
 
 unsigned char lives;
 bool lives_need_update;
+
+unsigned char current_game_state;
+unsigned char next_game_state;
 
 shot shots[LANE_COUNT];
 enemy enemies[LANE_COUNT];
@@ -274,6 +282,11 @@ void draw_player_death_frame(unsigned char frame) {
   wait_frames(18);
 }
 
+void change_life_counter(unsigned char next_value) {
+  lives = next_value;
+  lives_need_update = true;
+}
+
 void kill_player() {
   unsigned char i;
 
@@ -298,8 +311,7 @@ void kill_player() {
   player_x = PLAYER_CENTER_X;
   player_dead = false;
 
-  lives--;
-  lives_need_update = true;
+  change_life_counter(lives - 1);
 }
 
 void prepare_score() {
@@ -569,6 +581,15 @@ void auto_player_movement() {
   } else {
     move_player_target_lane();
   }
+
+  joy = SMS_getKeysStatus();
+  if (joy & (PORT_A_KEY_1 | PORT_A_KEY_2)) {
+    next_game_state = STATE_GAME_START;
+
+    do {
+      wait_frame();
+    } while (SMS_getKeysStatus());
+  }
 }
 
 void intermission() {
@@ -577,10 +598,6 @@ void intermission() {
   unsigned char pal_buffer[16];
 
   SMS_displayOff();
-
-  SMS_VDPturnOnFeature(VDPFEATURE_USETALLSPRITES);
-  SMS_VDPturnOffFeature(VDPFEATURE_HIDEFIRSTCOL);
-  SMS_useFirstHalfTilesforSprites(true);
 
   SMS_loadTiles(ship_til, 0, ship_til_size);
   SMS_loadTiles(intermission_bkg_til, 0, intermission_bkg_til_size);
@@ -634,11 +651,9 @@ void intermission() {
 }
 
 void gameplay_loop(void (*player_handler)()) {
-  init_player();
+  SMS_displayOff();
 
-  SMS_VDPturnOnFeature(VDPFEATURE_USETALLSPRITES);
-  SMS_VDPturnOffFeature(VDPFEATURE_HIDEFIRSTCOL);
-  SMS_useFirstHalfTilesforSprites(true);
+  init_player();
 
   load_ingame_tiles();
 
@@ -654,7 +669,7 @@ void gameplay_loop(void (*player_handler)()) {
 
   SMS_displayOn();
 
-  while (true) {
+  while (!next_game_state) {
     // Player
 
     (*player_handler)();
@@ -693,18 +708,42 @@ void gameplay_loop(void (*player_handler)()) {
 }
 
 void main(void) {
-  intermission();
+  SMS_VDPturnOnFeature(VDPFEATURE_USETALLSPRITES);
+  SMS_VDPturnOffFeature(VDPFEATURE_HIDEFIRSTCOL);
+  SMS_useFirstHalfTilesforSprites(true);
 
-  SMS_displayOff();
+  next_game_state = STATE_DEMO;
+  while (true) {
+    if (next_game_state) {
+      current_game_state = next_game_state;
+      next_game_state = 0;
+    }
 
-  lives = 6;
-  lives_need_update = true;
-  player_invincible = false;
+    switch (current_game_state) {
+      case STATE_DEMO:
+        change_life_counter(0);
+        player_invincible = true;
+        gameplay_loop(auto_player_movement);
+        break;
 
-  init_score();
+      case STATE_GAME_START:
+        change_life_counter(6);
+        player_invincible = false;
+        next_game_state = STATE_NEXT_STAGE;
+        init_score();
+        break;
 
-  gameplay_loop(handle_player_movement);
-// gameplay_loop(auto_player_movement);
+      case STATE_NEXT_STAGE:
+        intermission();
+        next_game_state = STATE_PLAY;
+        break;
+
+      case STATE_PLAY:
+        gameplay_loop(handle_player_movement);
+        break;
+    }
+  }
+
 }
 
 SMS_EMBED_SEGA_ROM_HEADER(9999,0); // code 9999 hopefully free, here this means 'homebrew'
