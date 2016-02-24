@@ -544,13 +544,16 @@ void intermission() {
 
   SMS_displayOn();
 
-  for (timeleft = 40; timeleft; timeleft--) {
+  PSGPlayNoRepeat(intermission_psg);
+
+  for (timeleft = 50; timeleft; timeleft--) {
     for (g_i = 0; g_i != 16; g_i++) {
       pal_buffer[g_i] = ship_pal[(g_i + timeleft) & 0x0F];
     }
 
     SMS_waitForVBlank();
     SMS_loadBGPalette(pal_buffer);
+    PSGFrame();
 
     wait_frames(2);
   }
