@@ -83,6 +83,7 @@ bool player_invincible;
 unsigned char score_digits[SCORE_DIGITS];
 unsigned int score_tiles[2][SCORE_DIGITS];
 bool score_needs_update;
+bool score_enabled;
 
 unsigned char lives;
 bool lives_need_update;
@@ -351,6 +352,10 @@ void prepare_score() {
 
 void increase_score(unsigned int how_much) {
   unsigned char *sc_p = score_digits + SCORE_DIGITS - 2;
+
+  if (!score_enabled) {
+    return;
+  }
 
   while (how_much) {
     *sc_p += how_much;
@@ -682,6 +687,8 @@ void gameplay_loop(void (*player_handler)()) {
   init_enemies();
   init_shots();
 
+  score_needs_update = true;
+  prepare_score();
   draw_score();
   draw_lives();
 
@@ -741,6 +748,7 @@ void main(void) {
         change_life_counter(0);
         player_invincible = true;
         sound_enabled = false;
+        score_enabled = false;
         gameplay_loop(auto_player_movement);
         break;
 
@@ -748,6 +756,7 @@ void main(void) {
         change_life_counter(6);
         player_invincible = false;
         sound_enabled = true;
+        score_enabled = true;
         next_game_state = STATE_NEXT_STAGE;
         init_score();
         break;
