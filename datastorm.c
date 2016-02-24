@@ -48,6 +48,8 @@
 #define SCORE_LEFT 13
 #define SCORE_DIGITS 6
 
+#define LIFE_BASE_TILE 0xCA
+
 typedef struct _shot {
   unsigned int x;
   unsigned char flag;
@@ -471,10 +473,10 @@ void draw_lives() {
     return;
   }
 
-  buffer[0] = PLAYER_BASE_TILE;
-  buffer[1] = PLAYER_BASE_TILE + 2;
-  buffer[2] = PLAYER_BASE_TILE + 1;
-  buffer[3] = PLAYER_BASE_TILE + 3;
+  buffer[0] = LIFE_BASE_TILE;
+  buffer[1] = LIFE_BASE_TILE + 2;
+  buffer[2] = LIFE_BASE_TILE + 1;
+  buffer[3] = LIFE_BASE_TILE + 3;
 
   for (g_i = 0, g_x = 16 - lives; g_i != lives; g_i++, g_x += 2) {
     SMS_loadTileMapArea(g_x, 0, buffer, 2, 2);
