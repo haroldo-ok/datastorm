@@ -75,6 +75,9 @@ unsigned char score_digits[SCORE_DIGITS];
 unsigned int score_tiles[2][SCORE_DIGITS];
 bool score_needs_update;
 
+unsigned char lives;
+bool lives_need_update;
+
 shot shots[LANE_COUNT];
 enemy enemies[LANE_COUNT];
 
@@ -108,11 +111,9 @@ void load_ingame_tiles() {
   SMS_loadTiles(ship_til, 0, ship_til_size);
 }
 
-void draw_lanes() {
+void generate_lane(unsigned int *buffer) {
   unsigned char i;
   unsigned int *p, *p2;
-  unsigned int y;
-  unsigned int buffer[32];
 
   p = buffer;
   p2 = p + 31;
@@ -136,6 +137,14 @@ void draw_lanes() {
     *p2 = LANE_BASE_TILE + 2;
     p++; p2--;
   }
+}
+
+void draw_lanes() {
+  unsigned char i;
+  unsigned int y;
+  unsigned int buffer[32];
+
+  generate_lane(buffer);
 
   // Draws the topmost/bottommost dividers
 
@@ -280,6 +289,9 @@ void kill_player() {
 
   player_x = PLAYER_CENTER_X;
   player_dead = false;
+
+  lives--;
+  lives_need_update = true;
 }
 
 void prepare_score() {
@@ -441,6 +453,36 @@ void move_enemies() {
   }
 }
 
+void draw_lives() {
+  unsigned int buffer[32];
+
+  if (!lives_need_update) {
+    return;
+  }
+
+  // Redraws the topmost lane dividers
+  generate_lane(buffer);
+  SMS_loadTileMap(0, LANE_TOP, buffer, 64);
+  memset(buffer, 0, sizeof buffer);
+  SMS_loadTileMap(0, 0, buffer, 64);
+
+  if (!lives) {
+    // No lives left.
+    return;
+  }
+
+  buffer[0] = PLAYER_BASE_TILE;
+  buffer[1] = PLAYER_BASE_TILE + 2;
+  buffer[2] = PLAYER_BASE_TILE + 1;
+  buffer[3] = PLAYER_BASE_TILE + 3;
+
+  for (g_i = 0, g_x = 16 - lives; g_i != lives; g_i++, g_x += 2) {
+    SMS_loadTileMapArea(g_x, 0, buffer, 2, 2);
+  }
+
+  lives_need_update = false;
+}
+
 void init_player() {
   player_x = PLAYER_CENTER_X;
   player_y = PLAYER_MIN_Y;
@@ -450,6 +492,9 @@ void init_player() {
 }
 
 void main(void) {
+  lives = 6;
+  lives_need_update = true;
+
   init_score();
   init_player();
 
@@ -467,6 +512,7 @@ void main(void) {
   init_shots();
 
   draw_score();
+  draw_lives();
 
   SMS_displayOn();
 
@@ -536,6 +582,7 @@ void main(void) {
     SMS_waitForVBlank();
     SMS_copySpritestoSAT();
     draw_score();
+    draw_lives();
 
     PSGFrame();
     PSGSFXFrame();
