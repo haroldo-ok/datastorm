@@ -245,11 +245,15 @@ void draw_enemies() {
   }
 }
 
+void wait_frame() {
+  SMS_waitForVBlank();
+  PSGFrame();
+  PSGSFXFrame();
+}
+
 void wait_frames(int count) {
     for (; count; count--) {
-      SMS_waitForVBlank();
-      PSGFrame();
-      PSGSFXFrame();
+      wait_frame();
     }
 }
 
@@ -493,7 +497,70 @@ void init_player() {
   player_dead = false;
 }
 
+void intermission() {
+  unsigned int timeleft;
+  unsigned int buffer[4][32], *p;
+  unsigned char pal_buffer[16];
+
+  SMS_displayOff();
+
+  SMS_VDPturnOnFeature(VDPFEATURE_USETALLSPRITES);
+  SMS_VDPturnOffFeature(VDPFEATURE_HIDEFIRSTCOL);
+  SMS_useFirstHalfTilesforSprites(true);
+
+  SMS_loadTiles(ship_til, 0, ship_til_size);
+  SMS_loadTiles(intermission_bkg_til, 0, intermission_bkg_til_size);
+  SMS_loadBGPalette(ship_pal);
+  SMS_loadSpritePalette(ship_pal);
+
+  // Draw the background
+
+  for (g_y = 0; g_y != 4; g_y++) {
+    for (g_x = 0; g_x != 32; g_x++) {
+      buffer[g_y][g_x] = g_y | (g_x & 0x04 ? 0x400 : 0);
+    }
+  }
+
+  for (g_y = 0; g_y < 24; g_y += 4) {
+    SMS_loadTileMapArea(0, g_y, *buffer, 32, 4);
+  }
+
+  // Draw the black rectangle in the center
+
+  p = *buffer;
+  for (g_y = 0; g_y != 4; g_y++) {
+    for (g_x = 0; g_x != 6; g_x++) {
+      *p = 0x8FF;
+      p++;
+    }
+  }
+  SMS_loadTileMapArea(13, 10, *buffer, 6, 4);
+
+  // Draw the level number
+  SMS_initSprites();
+  SMS_addSprite(126, 88, SCORE_BASE_TILE + 2);
+  SMS_finalizeSprites();
+  SMS_copySpritestoSAT();
+
+  SMS_displayOn();
+
+  for (timeleft = 40; timeleft; timeleft--) {
+    for (g_i = 0; g_i != 16; g_i++) {
+      pal_buffer[g_i] = ship_pal[(g_i + timeleft) & 0x0F];
+    }
+
+    SMS_waitForVBlank();
+    SMS_loadBGPalette(pal_buffer);
+
+    wait_frames(2);
+  }
+}
+
 void main(void) {
+  intermission();
+
+  SMS_displayOff();
+
   lives = 6;
   lives_need_update = true;
 
