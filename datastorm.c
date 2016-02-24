@@ -27,6 +27,7 @@
 #define PLAYER_BASE_TILE 16
 #define PLAYER_DEATH_BASE_TILE 4
 #define PLAYER_DEATH_FRAMES 2
+#define PLAYER_VERTICAL_SPEED 12
 
 #define SHOT_FLAG_LEFT 1
 #define SHOT_FLAG_RIGHT 2
@@ -72,6 +73,7 @@ unsigned char player_current_lane, player_target_lane;
 unsigned char player_target_y;
 unsigned char player_looking_left;
 bool player_dead;
+bool player_invincible;
 
 unsigned char score_digits[SCORE_DIGITS];
 unsigned int score_tiles[2][SCORE_DIGITS];
@@ -497,6 +499,19 @@ void init_player() {
   player_dead = false;
 }
 
+void move_player_target_lane() {
+  // Move towards the targeted lane
+  if (player_y != player_target_y) {
+    if (player_y < player_target_y) {
+      player_y += PLAYER_VERTICAL_SPEED;
+    } else {
+      player_y -= PLAYER_VERTICAL_SPEED;
+    }
+  } else {
+    player_current_lane = player_target_lane;
+  }
+}
+
 void handle_player_movement() {
   joy = SMS_getKeysStatus();
 
@@ -528,16 +543,31 @@ void handle_player_movement() {
       }
     }
   } else {
-    // Move towards the targeted lane
-    if (player_y != player_target_y) {
-      if (player_y < player_target_y) {
-        player_y += 12;
+    move_player_target_lane();
+  }
+}
+
+void auto_player_movement() {
+  if (player_current_lane == player_target_lane) {
+    if (player_looking_left) {
+      // Move up, if possible
+      if (player_current_lane > 0) {
+        player_target_lane--;
+        change_lane();
       } else {
-        player_y -= 12;
+        player_looking_left = false;
       }
     } else {
-      player_current_lane = player_target_lane;
+      // Move down, if possible
+      if (player_current_lane < LANE_COUNT - 1) {
+        player_target_lane++;
+        change_lane();
+      } else {
+        player_looking_left = true;
+      }
     }
+  } else {
+    move_player_target_lane();
   }
 }
 
@@ -603,15 +633,7 @@ void intermission() {
   }
 }
 
-void main(void) {
-  intermission();
-
-  SMS_displayOff();
-
-  lives = 6;
-  lives_need_update = true;
-
-  init_score();
+void gameplay_loop(void (*player_handler)()) {
   init_player();
 
   SMS_VDPturnOnFeature(VDPFEATURE_USETALLSPRITES);
@@ -635,7 +657,7 @@ void main(void) {
   while (true) {
     // Player
 
-    handle_player_movement();
+    (*player_handler)();
     fire();
 
     // Shots
@@ -664,10 +686,25 @@ void main(void) {
 
     frame_timer++;
 
-    if (player_dead) {
+    if (player_dead && !player_invincible) {
       kill_player();
     }
   }
+}
+
+void main(void) {
+  intermission();
+
+  SMS_displayOff();
+
+  lives = 6;
+  lives_need_update = true;
+  player_invincible = false;
+
+  init_score();
+
+  gameplay_loop(handle_player_movement);
+// gameplay_loop(auto_player_movement);
 }
 
 SMS_EMBED_SEGA_ROM_HEADER(9999,0); // code 9999 hopefully free, here this means 'homebrew'
