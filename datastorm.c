@@ -497,6 +497,50 @@ void init_player() {
   player_dead = false;
 }
 
+void handle_player_movement() {
+  joy = SMS_getKeysStatus();
+
+  if (joy & PORT_A_KEY_LEFT) {
+    player_looking_left = true;
+  } else if (joy & PORT_A_KEY_RIGHT) {
+    player_looking_left = false;
+  }
+
+  if (player_current_lane == player_target_lane) {
+    // Allow to move left or right if there's a pellet on the current lane
+    enm_p = enemies + player_current_lane;
+    if (enm_p->spd && enm_p->type == ENEMY_TYPE_PELLET || player_x != PLAYER_CENTER_X) {
+      if ((joy & PORT_A_KEY_LEFT) && (player_x > ACTOR_MIN_X)) {
+        player_x -= 4;
+      } else if ((joy & PORT_A_KEY_RIGHT) && (player_x < ACTOR_MAX_X)) {
+        player_x += 4;
+      }
+    }
+
+    if (player_x == PLAYER_CENTER_X) {
+      // Move up or down the lanes according to joypad command
+      if ((joy & PORT_A_KEY_UP) && (player_current_lane > 0)) {
+        player_target_lane--;
+        change_lane();
+      } else if ((joy & PORT_A_KEY_DOWN) && (player_current_lane < LANE_COUNT - 1)) {
+        player_target_lane++;
+        change_lane();
+      }
+    }
+  } else {
+    // Move towards the targeted lane
+    if (player_y != player_target_y) {
+      if (player_y < player_target_y) {
+        player_y += 12;
+      } else {
+        player_y -= 12;
+      }
+    } else {
+      player_current_lane = player_target_lane;
+    }
+  }
+}
+
 void intermission() {
   unsigned int timeleft;
   unsigned int buffer[4][32], *p;
@@ -591,48 +635,7 @@ void main(void) {
   while (true) {
     // Player
 
-    joy = SMS_getKeysStatus();
-
-    if (joy & PORT_A_KEY_LEFT) {
-      player_looking_left = true;
-    } else if (joy & PORT_A_KEY_RIGHT) {
-      player_looking_left = false;
-    }
-
-    if (player_current_lane == player_target_lane) {
-      // Allow to move left or right if there's a pellet on the current lane
-      enm_p = enemies + player_current_lane;
-      if (enm_p->spd && enm_p->type == ENEMY_TYPE_PELLET || player_x != PLAYER_CENTER_X) {
-        if ((joy & PORT_A_KEY_LEFT) && (player_x > ACTOR_MIN_X)) {
-          player_x -= 4;
-        } else if ((joy & PORT_A_KEY_RIGHT) && (player_x < ACTOR_MAX_X)) {
-          player_x += 4;
-        }
-      }
-
-      if (player_x == PLAYER_CENTER_X) {
-        // Move up or down the lanes according to joypad command
-        if ((joy & PORT_A_KEY_UP) && (player_current_lane > 0)) {
-          player_target_lane--;
-          change_lane();
-        } else if ((joy & PORT_A_KEY_DOWN) && (player_current_lane < LANE_COUNT - 1)) {
-          player_target_lane++;
-          change_lane();
-        }
-      }
-    } else {
-      // Move towards the targeted lane
-      if (player_y != player_target_y) {
-        if (player_y < player_target_y) {
-          player_y += 12;
-        } else {
-          player_y -= 12;
-        }
-      } else {
-        player_current_lane = player_target_lane;
-      }
-    }
-
+    handle_player_movement();
     fire();
 
     // Shots
