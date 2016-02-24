@@ -90,6 +90,8 @@ bool lives_need_update;
 unsigned char current_game_state;
 unsigned char next_game_state;
 
+bool sound_enabled;
+
 shot shots[LANE_COUNT];
 enemy enemies[LANE_COUNT];
 
@@ -255,10 +257,24 @@ void draw_enemies() {
   }
 }
 
-void wait_frame() {
-  SMS_waitForVBlank();
+void sound_frame() {
+  if (!sound_enabled) {
+    stop_sound();
+    return;
+  }
+
   PSGFrame();
   PSGSFXFrame();
+}
+
+void stop_sound() {
+  PSGStop();
+  PSGSFXStop();
+}
+
+void wait_frame() {
+  SMS_waitForVBlank();
+  sound_frame();
 }
 
 void wait_frames(int count) {
@@ -276,8 +292,7 @@ void draw_player_death_frame(unsigned char frame) {
   SMS_waitForVBlank();
   SMS_copySpritestoSAT();
 
-  PSGFrame();
-  PSGSFXFrame();
+  sound_frame();
 
   wait_frames(18);
 }
@@ -290,8 +305,11 @@ void change_life_counter(unsigned char next_value) {
 void kill_player() {
   unsigned char i;
 
-  PSGStop();
-  PSGSFXStop();
+  if (player_invincible) {
+    return;
+  }
+
+  stop_sound();
   PSGPlayNoRepeat(player_death_psg);
 
   init_enemies();
@@ -644,7 +662,7 @@ void intermission() {
 
     SMS_waitForVBlank();
     SMS_loadBGPalette(pal_buffer);
-    PSGFrame();
+    sound_frame();
 
     wait_frames(2);
   }
@@ -696,12 +714,11 @@ void gameplay_loop(void (*player_handler)()) {
     draw_score();
     draw_lives();
 
-    PSGFrame();
-    PSGSFXFrame();
+    sound_frame();
 
     frame_timer++;
 
-    if (player_dead && !player_invincible) {
+    if (player_dead) {
       kill_player();
     }
   }
@@ -723,12 +740,14 @@ void main(void) {
       case STATE_DEMO:
         change_life_counter(0);
         player_invincible = true;
+        sound_enabled = false;
         gameplay_loop(auto_player_movement);
         break;
 
       case STATE_GAME_START:
         change_life_counter(6);
         player_invincible = false;
+        sound_enabled = true;
         next_game_state = STATE_NEXT_STAGE;
         init_score();
         break;
