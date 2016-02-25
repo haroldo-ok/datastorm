@@ -352,7 +352,7 @@ void prepare_score() {
 }
 
 void increase_score(unsigned int how_much) {
-  unsigned char *sc_p = score_digits + SCORE_DIGITS - 2;
+  sc_p = score_digits + SCORE_DIGITS - 2;
 
   if (!score_enabled) {
     return;
