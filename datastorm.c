@@ -93,11 +93,16 @@ unsigned char next_game_state;
 
 bool sound_enabled;
 
+unsigned char level_number;
+char remaining_enemies;
+
 shot shots[LANE_COUNT];
 enemy enemies[LANE_COUNT];
 
 // Former local variables converted to globals to see if it speeds up things
 unsigned char g_i, g_x, g_y, g_lane;
+unsigned char *sc_p;
+unsigned int *st_p, *st_p2;
 shot *shot_p;
 enemy *enm_p;
 
@@ -258,6 +263,11 @@ void draw_enemies() {
   }
 }
 
+void stop_sound() {
+  PSGStop();
+  PSGSFXStop();
+}
+
 void sound_frame() {
   if (!sound_enabled) {
     stop_sound();
@@ -266,11 +276,6 @@ void sound_frame() {
 
   PSGFrame();
   PSGSFXFrame();
-}
-
-void stop_sound() {
-  PSGStop();
-  PSGSFXStop();
 }
 
 void wait_frame() {
@@ -334,17 +339,13 @@ void kill_player() {
 }
 
 void prepare_score() {
-  unsigned char i;
-  unsigned char *sc_p;
-  unsigned int *st_p, *st_p2;
-
   if (!score_needs_update) {
     return;
   }
 
   st_p = score_tiles[0];
   st_p2 = score_tiles[1];
-  for (i = 0, sc_p = score_digits; i != SCORE_DIGITS; i++, sc_p++, st_p++, st_p2++) {
+  for (g_i = 0, sc_p = score_digits; g_i != SCORE_DIGITS; g_i++, sc_p++, st_p++, st_p2++) {
     *st_p = (*sc_p << 1) + SCORE_BASE_TILE;
     *st_p2 = *st_p + 1;
   }
@@ -397,6 +398,7 @@ void kill_enemy() {
   enm_p->spd = 0;
   increase_score(1);
   PSGSFXPlay(enemy_death_psg, SFX_CHANNEL2 | SFX_CHANNEL3);
+  remaining_enemies--;
 }
 
 void spawn_enemy(unsigned char type, bool from_left) {
@@ -580,6 +582,10 @@ void handle_player_movement() {
   } else {
     move_player_target_lane();
   }
+
+  if (remaining_enemies <= 0) {
+    next_game_state = STATE_NEXT_STAGE;
+  }
 }
 
 void auto_player_movement() {
@@ -621,6 +627,7 @@ void intermission() {
   unsigned char pal_buffer[16];
 
   SMS_displayOff();
+  stop_sound();
 
   SMS_loadTiles(ship_til, 0, ship_til_size);
   SMS_loadTiles(intermission_bkg_til, 0, intermission_bkg_til_size);
@@ -652,7 +659,7 @@ void intermission() {
 
   // Draw the level number
   SMS_initSprites();
-  SMS_addSprite(126, 88, SCORE_BASE_TILE + 2);
+  SMS_addSprite(126, 88, SCORE_BASE_TILE + (level_number << 1));
   SMS_finalizeSprites();
   SMS_copySpritestoSAT();
 
@@ -693,6 +700,8 @@ void gameplay_loop(void (*player_handler)()) {
   draw_lives();
 
   SMS_displayOn();
+
+  remaining_enemies = 20 + (level_number << 2);
 
   while (!next_game_state) {
     // Player
@@ -758,10 +767,12 @@ void main(void) {
         sound_enabled = true;
         score_enabled = true;
         next_game_state = STATE_NEXT_STAGE;
+        level_number = 0;
         init_score();
         break;
 
       case STATE_NEXT_STAGE:
+        level_number++;
         intermission();
         next_game_state = STATE_PLAY;
         break;
