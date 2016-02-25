@@ -107,6 +107,9 @@ unsigned int *st_p, *st_p2;
 shot *shot_p;
 enemy *enm_p;
 
+const unsigned int bkg_data_storm[] = { 0xD6, 0xD5, 0xD4, 0xD5, 0x00, 0xD3, 0xD4, 0xD7, 0xD1, 0xD8 };
+const unsigned int bkg_press_start[] = { 0xD0, 0xD1, 0xD2, 0xD3, 0xD3, 0x00, 0x00, 0xD3, 0xD4, 0xD5, 0xD1, 0xD4 };
+
 void add_double_sprite(unsigned char x, unsigned char y, unsigned char tile) {
   SMS_addSprite(x - 8, y, tile);
   SMS_addSprite(x, y, tile + 2);
@@ -703,6 +706,11 @@ void gameplay_loop(void (*player_handler)()) {
   prepare_score();
   draw_score();
   draw_lives();
+
+  if (player_invincible) {
+    SMS_loadTileMap(11, 12, bkg_data_storm, sizeof bkg_data_storm);
+    SMS_loadTileMap(10, 14, bkg_press_start, sizeof bkg_press_start);
+  }
 
   SMS_displayOn();
 
