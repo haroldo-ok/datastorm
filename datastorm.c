@@ -767,7 +767,7 @@ void main(void) {
         break;
 
       case STATE_GAME_START:
-        change_life_counter(6);
+        change_life_counter(3);
         player_invincible = false;
         sound_enabled = true;
         score_enabled = true;
@@ -787,6 +787,9 @@ void main(void) {
         break;
 
       case STATE_GAME_OVER:
+        stop_sound();
+        PSGPlayNoRepeat(game_over_psg);
+        wait_frames(240);
         next_game_state = STATE_DEMO;
         break;
     }
