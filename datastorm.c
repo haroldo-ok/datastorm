@@ -55,6 +55,7 @@
 #define STATE_GAME_START 2
 #define STATE_NEXT_STAGE 3
 #define STATE_PLAY 4
+#define STATE_GAME_OVER 5
 
 typedef struct _shot {
   unsigned int x;
@@ -336,6 +337,10 @@ void kill_player() {
   player_dead = false;
 
   change_life_counter(lives - 1);
+
+  if (!lives) {
+    next_game_state = STATE_GAME_OVER;
+  }
 }
 
 void prepare_score() {
@@ -779,6 +784,10 @@ void main(void) {
 
       case STATE_PLAY:
         gameplay_loop(handle_player_movement);
+        break;
+
+      case STATE_GAME_OVER:
+        next_game_state = STATE_DEMO;
         break;
     }
   }
