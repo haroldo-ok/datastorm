@@ -110,6 +110,11 @@ enemy *enm_p;
 const unsigned int bkg_data_storm[] = { 0xD6, 0xD5, 0xD4, 0xD5, 0x00, 0xD3, 0xD4, 0xD7, 0xD1, 0xD8 };
 const unsigned int bkg_press_start[] = { 0xD0, 0xD1, 0xD2, 0xD3, 0xD3, 0x00, 0x00, 0xD3, 0xD4, 0xD5, 0xD1, 0xD4 };
 
+const unsigned char spawnable_enemies[] = {
+  ENEMY_TYPE_SLOW, ENEMY_TYPE_MEDIUM, ENEMY_TYPE_FAST,
+  ENEMY_TYPE_PELLET, ENEMY_TYPE_ARROW
+};
+
 void add_double_sprite(unsigned char x, unsigned char y, unsigned char tile) {
   SMS_addSprite(x - 8, y, tile);
   SMS_addSprite(x, y, tile + 2);
@@ -420,6 +425,14 @@ void spawn_enemy(unsigned char type, bool from_left) {
   enm_p->type = type;
 }
 
+void spawn_random_enemy() {
+  g_x = rand() % ENEMY_TYPE_MASK;
+  if (g_x >= 5) {
+    return;
+  }
+  spawn_enemy(spawnable_enemies[g_x], rand() & 1);
+}
+
 void collide_enemy() {
   shot_p = shots + g_lane;
 
@@ -471,7 +484,7 @@ void move_enemies() {
     if (!enm_p->spd) {
       if ((rand() & 0x1F) == 1) {
         // Spawns a new enemy
-        spawn_enemy(rand() & ENEMY_TYPE_MASK, rand() & 1);
+        spawn_random_enemy();
       }
     } else {
       collide_enemy();
