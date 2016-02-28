@@ -66,11 +66,16 @@ typedef struct _enemy {
   unsigned int x;
   unsigned char type;
   char spd, timer;
+  unsigned char spawn_delay;
 } enemy;
 
 typedef struct _enemy_spec {
   unsigned char base_speed, additional_speed_mask;
 } enemy_spec;
+
+typedef struct _level_spec {
+  unsigned char base_spawn_delay, spawn_chance_mask;
+} level_spec;
 
 const unsigned char lane_coords[] = { 0, LANE_PIXEL_HEIGHT, 2 * LANE_PIXEL_HEIGHT, 3 * LANE_PIXEL_HEIGHT, 4 * LANE_PIXEL_HEIGHT, 5 * LANE_PIXEL_HEIGHT, 6 * LANE_PIXEL_HEIGHT };
 
@@ -110,6 +115,7 @@ unsigned char *sc_p;
 unsigned int *st_p, *st_p2;
 shot *shot_p;
 enemy *enm_p;
+level_spec *lvl_p;
 
 const unsigned int bkg_data_storm[] = { 0xD6, 0xD5, 0xD4, 0xD5, 0x00, 0xD3, 0xD4, 0xD7, 0xD1, 0xD8 };
 const unsigned int bkg_press_start[] = { 0xD0, 0xD1, 0xD2, 0xD3, 0xD3, 0x00, 0x00, 0xD3, 0xD4, 0xD5, 0xD1, 0xD4 };
@@ -118,6 +124,7 @@ const unsigned char spawnable_enemies[] = {
   ENEMY_TYPE_SLOW, ENEMY_TYPE_MEDIUM, ENEMY_TYPE_FAST,
   ENEMY_TYPE_PELLET, ENEMY_TYPE_ARROW
 };
+
 const enemy_spec enemy_specs[] = {
   // ENEMY_TYPE_SLOW
   {8, 0x03},
@@ -135,6 +142,27 @@ const enemy_spec enemy_specs[] = {
   {12, 0x07},
   // ENEMY_TYPE_PHANTOM
   {14, 0},
+};
+
+const level_spec level_specs[] = {
+  // 1
+  {64, 0x3F},
+  // 2
+  {32, 0x3F},
+  // 3
+  {24, 0x3F},
+  // 4
+  {24, 0x1F},
+  // 5
+  {16, 0x1F},
+  // 6
+  {8, 0x0F},
+  // 7
+  {8, 0x0F},
+  // 8
+  {8, 0x07},
+  // 9
+  {0, 0x07},
 };
 
 void add_double_sprite(unsigned char x, unsigned char y, unsigned char tile) {
@@ -279,6 +307,7 @@ void init_enemies() {
 
   for (i = 0, p = enemies; i != LANE_COUNT; i++, p++) {
     p->spd = 0;
+    p->spawn_delay = 0;
   }
 }
 
@@ -507,9 +536,15 @@ void collide_enemy() {
 void move_enemies() {
   for (g_lane = 0, enm_p = enemies; g_lane != LANE_COUNT; g_lane++, enm_p++) {
     if (!enm_p->spd) {
-      if ((rand() & 0x1F) == 1) {
-        // Spawns a new enemy
-        spawn_random_enemy();
+      if (enm_p->spawn_delay) {
+        if (enm_p->spawn_delay == 1) {
+          spawn_random_enemy();
+          enm_p->spawn_delay = 0;
+        } else {
+          enm_p->spawn_delay--;
+        }
+      } else {
+        enm_p->spawn_delay = lvl_p->base_spawn_delay + rand() & lvl_p->spawn_chance_mask;
       }
     } else {
       collide_enemy();
@@ -829,6 +864,7 @@ void main(void) {
 
       case STATE_NEXT_STAGE:
         level_number++;
+        lvl_p = level_specs + level_number - 1;
         intermission();
         next_game_state = STATE_PLAY;
         break;
