@@ -68,6 +68,10 @@ typedef struct _enemy {
   char spd, timer;
 } enemy;
 
+typedef struct _enemy_spec {
+  unsigned char base_speed, additional_speed_mask;
+} enemy_spec;
+
 const unsigned char lane_coords[] = { 0, LANE_PIXEL_HEIGHT, 2 * LANE_PIXEL_HEIGHT, 3 * LANE_PIXEL_HEIGHT, 4 * LANE_PIXEL_HEIGHT, 5 * LANE_PIXEL_HEIGHT, 6 * LANE_PIXEL_HEIGHT };
 
 int joy;
@@ -113,6 +117,24 @@ const unsigned int bkg_press_start[] = { 0xD0, 0xD1, 0xD2, 0xD3, 0xD3, 0x00, 0x0
 const unsigned char spawnable_enemies[] = {
   ENEMY_TYPE_SLOW, ENEMY_TYPE_MEDIUM, ENEMY_TYPE_FAST,
   ENEMY_TYPE_PELLET, ENEMY_TYPE_ARROW
+};
+const enemy_spec enemy_specs[] = {
+  // ENEMY_TYPE_SLOW
+  {8, 0x03},
+  // ENEMY_TYPE_MEDIUM
+  {12, 0x07},
+  // ENEMY_TYPE_FAST
+  {10, 0x0F},
+  // ENEMY_TYPE_PELLET
+  {24, 0},
+  // ENEMY_TYPE_BALL
+  {24, 0},
+  // ENEMY_TYPE_ARROW
+  {24, 0},
+  // ENEMY_TYPE_TANK
+  {12, 0x07},
+  // ENEMY_TYPE_PHANTOM
+  {14, 0},
 };
 
 void add_double_sprite(unsigned char x, unsigned char y, unsigned char tile) {
@@ -415,12 +437,15 @@ void kill_enemy() {
 }
 
 void spawn_enemy(unsigned char type, bool from_left) {
+  const enemy_spec *sp = enemy_specs + type;
+  unsigned char speed = sp->base_speed + (rand() & sp->additional_speed_mask);
+
   if (from_left) {
     enm_p->x = ACTOR_MIN_X + 1;
-    enm_p->spd = 12;
+    enm_p->spd = speed;
   } else {
     enm_p->x = ACTOR_MAX_X - 1;
-    enm_p->spd = -12;
+    enm_p->spd = -speed;
   }
   enm_p->type = type;
 }
