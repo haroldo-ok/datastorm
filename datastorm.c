@@ -490,7 +490,12 @@ void move_enemies() {
       collide_enemy();
 
       if (enm_p->type == ENEMY_TYPE_PELLET) {
-        enm_p->timer = 1;
+        enm_p->timer++;
+        if (enm_p->timer > 120) {
+          enm_p->timer = 0;
+          enm_p->type = ENEMY_TYPE_BALL;
+          enm_p->spd = 24;
+        }
       } else {
         enm_p->timer += enm_p->spd;
         enm_p->x += enm_p->timer >> 4;
