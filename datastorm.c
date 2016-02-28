@@ -878,7 +878,7 @@ void main(void) {
       case STATE_GAME_OVER:
         stop_sound();
         PSGPlayNoRepeat(game_over_psg);
-        wait_frames(240);
+        wait_frames(400);
         next_game_state = STATE_DEMO;
         break;
     }
