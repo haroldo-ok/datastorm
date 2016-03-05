@@ -386,7 +386,7 @@ void kill_player() {
     draw_player_death_frame(i);
   }
 
-  wait_frames(18);
+  wait_frames(30);
 
   for (i = PLAYER_DEATH_FRAMES; i != 0; i--) {
     draw_player_death_frame(i - 1);
@@ -755,7 +755,7 @@ void intermission() {
 
   PSGPlayNoRepeat(intermission_psg);
 
-  for (timeleft = 50; timeleft; timeleft--) {
+  for (timeleft = 90; timeleft; timeleft--) {
     for (g_i = 0; g_i != 16; g_i++) {
       pal_buffer[g_i] = ship_pal[(g_i + timeleft) & 0x0F];
     }
@@ -878,7 +878,8 @@ void main(void) {
       case STATE_GAME_OVER:
         stop_sound();
         PSGPlayNoRepeat(game_over_psg);
-        wait_frames(400);
+        wait_frames(285);
+        stop_sound();
         next_game_state = STATE_DEMO;
         break;
     }
