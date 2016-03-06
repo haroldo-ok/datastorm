@@ -489,11 +489,20 @@ void spawn_enemy(unsigned char type, bool from_left) {
 }
 
 void spawn_random_enemy() {
+  unsigned char type;
+
   g_x = rand() % ENEMY_TYPE_MASK;
   if (g_x >= 5) {
     return;
   }
-  spawn_enemy(spawnable_enemies[g_x], rand() & 1);
+
+  type = spawnable_enemies[g_x];
+  if ((type == ENEMY_TYPE_PELLET) && (rand() & 1)) {
+    // Reduce the probability of spawning a pellet
+    return;
+  }
+
+  spawn_enemy(type, rand() & 1);
 }
 
 void collide_enemy() {
