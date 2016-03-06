@@ -70,7 +70,7 @@ typedef struct _enemy {
 } enemy;
 
 typedef struct _enemy_spec {
-  unsigned char base_speed, additional_speed_mask;
+  unsigned char base_speed, additional_speed_mask, score_value;
 } enemy_spec;
 
 typedef struct _level_spec {
@@ -128,21 +128,21 @@ const unsigned char spawnable_enemies[] = {
 
 const enemy_spec enemy_specs[] = {
   // ENEMY_TYPE_SLOW
-  {8, 0x03},
+  {8, 0x03, 1},
   // ENEMY_TYPE_MEDIUM
-  {12, 0x07},
+  {12, 0x07, 1},
   // ENEMY_TYPE_FAST
-  {10, 0x0F},
+  {10, 0x0F, 2},
   // ENEMY_TYPE_PELLET
-  {24, 0},
+  {24, 0, 8},
   // ENEMY_TYPE_BALL
-  {24, 0},
+  {24, 0, 9},
   // ENEMY_TYPE_ARROW
-  {24, 0},
+  {24, 0, 4},
   // ENEMY_TYPE_TANK
-  {12, 0x07},
+  {12, 0x07, 4},
   // ENEMY_TYPE_PHANTOM
-  {14, 0},
+  {14, 0, 0},
 };
 
 const level_spec level_specs[] = {
@@ -461,7 +461,7 @@ void draw_score() {
 
 void kill_enemy() {
   enm_p->spd = 0;
-  increase_score(1);
+  increase_score(enemy_specs[enm_p->type].score_value);
   PSGSFXPlay(enemy_death_psg, SFX_CHANNEL2 | SFX_CHANNEL3);
   remaining_enemies--;
 }
