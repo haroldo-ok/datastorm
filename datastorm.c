@@ -134,11 +134,11 @@ const enemy_spec enemy_specs[] = {
   // ENEMY_TYPE_FAST
   {10, 0x0F, 2},
   // ENEMY_TYPE_PELLET
-  {24, 0, 8},
+  {32, 0, 8},
   // ENEMY_TYPE_BALL
   {24, 0, 9},
   // ENEMY_TYPE_ARROW
-  {24, 0, 4},
+  {32, 0x03, 4},
   // ENEMY_TYPE_TANK
   {12, 0x07, 4},
   // ENEMY_TYPE_PHANTOM
@@ -577,7 +577,7 @@ void move_enemies() {
         if (enm_p->timer > 120) {
           enm_p->timer = 0;
           enm_p->type = ENEMY_TYPE_BALL;
-          enm_p->spd = 24;
+          enm_p->spd = 32;
         }
       } else {
         enm_p->timer += enm_p->spd;
@@ -595,6 +595,8 @@ void move_enemies() {
           if (enm_p->type == ENEMY_TYPE_ARROW) {
             // Become a tank
             enm_p->type = ENEMY_TYPE_TANK;
+            enm_p->spd = enm_p->spd >> 1;
+            PSGSFXPlay(enemy_tank_psg, SFX_CHANNEL2);
           }
         } else {
           // Disappear
