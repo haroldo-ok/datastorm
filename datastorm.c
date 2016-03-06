@@ -515,11 +515,21 @@ void collide_enemy() {
           if (shot_p->flag == SHOT_FLAG_LEFT) {
             // Both facing left? Blam!
             kill_enemy();
+          } else {
+            // Shot the front? Push back.
+            if (enm_p->x < (ACTOR_MAX_X - 8)) {
+              enm_p->x += 6;
+            }
           }
         } else {
           if (shot_p->flag == SHOT_FLAG_RIGHT) {
             // Both facing right? Blam!
             kill_enemy();
+          } else {
+            // Shot the front? Push back.
+            if (enm_p->x > (ACTOR_MIN_X + 8)) {
+              enm_p->x -= 6;
+            }
           }
         }
       } else {
