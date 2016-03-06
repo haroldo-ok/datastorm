@@ -21,8 +21,7 @@ You begin the game with five ships.  If you can blast all of the aliens in a lev
 
 Data Storm features a variety of speedy aliens which travel back and forth across the screen at their own unique paces.  The faster they move, the more points they are worth.  All aliens, except for the Prizes, must be shot while your ship is in the center alley.
 
-There are five different Enemy Ships to blast.  A collision
-will be deadly no matter which ship you hit:
+There are five different Enemy Ships to blast.  A collision will be deadly no matter which ship you hit:
 
 * Arrows:  If allowed to cross the screen, Arrows turn into Tanks.
 * Tanks:  These can only be destroyed from behind.  If shot head on, your bullet blasts will merely push the Tanks back a bit.

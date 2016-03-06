@@ -468,7 +468,11 @@ void kill_enemy() {
 
 void spawn_enemy(unsigned char type, bool from_left) {
   const enemy_spec *sp = enemy_specs + type;
-  unsigned char speed = sp->base_speed + (rand() & sp->additional_speed_mask);
+  unsigned int speed = sp->base_speed + (rand() & sp->additional_speed_mask);
+
+  if (type != ENEMY_TYPE_PHANTOM) {
+    speed = (speed * (level_number + 1)) >> 2;
+  }
 
   if (from_left) {
     enm_p->x = ACTOR_MIN_X + 1;
@@ -911,6 +915,7 @@ void main(void) {
 
       case STATE_GAME_OVER:
         stop_sound();
+        draw_lives();
         PSGPlayNoRepeat(game_over_psg);
         wait_frames(285);
         stop_sound();
