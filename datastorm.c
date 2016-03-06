@@ -482,6 +482,10 @@ void spawn_enemy(unsigned char type, bool from_left) {
     enm_p->spd = -speed;
   }
   enm_p->type = type;
+
+  if (type == ENEMY_TYPE_ARROW) {
+    PSGSFXPlay(enemy_arrow_psg, SFX_CHANNEL2);
+  }
 }
 
 void spawn_random_enemy() {
