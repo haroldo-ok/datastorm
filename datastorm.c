@@ -105,7 +105,7 @@ unsigned char next_game_state;
 bool sound_enabled;
 
 unsigned char level_number;
-char remaining_enemies;
+int remaining_enemies;
 
 shot shots[LANE_COUNT];
 enemy enemies[LANE_COUNT];
@@ -845,7 +845,7 @@ void gameplay_loop(void (*player_handler)()) {
 
   SMS_displayOn();
 
-  remaining_enemies = 20 + (level_number << 2);
+  remaining_enemies = 40 + (level_number << 2);
 
   while (!next_game_state) {
     // Player
