@@ -497,6 +497,7 @@ void collide_enemy() {
       kill_enemy();
       PSGPlayNoRepeat(bonus_psg);
       spawn_enemy(ENEMY_TYPE_PHANTOM, enm_p->x > PLAYER_CENTER_X);
+      enm_p->spawn_delay = 100;
     } else {
       // Other enemies are lethal.
       player_dead = true;
