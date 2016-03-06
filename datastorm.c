@@ -495,6 +495,7 @@ void collide_enemy() {
     if (enm_p->type == ENEMY_TYPE_PELLET) {
       // Pellets act as bonuses
       kill_enemy();
+      PSGPlayNoRepeat(bonus_psg);
       spawn_enemy(ENEMY_TYPE_PHANTOM, enm_p->x > PLAYER_CENTER_X);
     } else {
       // Other enemies are lethal.
