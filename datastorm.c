@@ -701,6 +701,9 @@ void handle_player_movement() {
 
   if (remaining_enemies <= 0) {
     next_game_state = STATE_NEXT_STAGE;
+    if (lives < 6) {
+      change_life_counter(lives + 1);
+    }
   }
 }
 
@@ -810,6 +813,7 @@ void gameplay_loop(void (*player_handler)()) {
   init_enemies();
   init_shots();
 
+  lives_need_update = true;
   score_needs_update = true;
   prepare_score();
   draw_score();
@@ -883,7 +887,7 @@ void main(void) {
         break;
 
       case STATE_GAME_START:
-        change_life_counter(3);
+        change_life_counter(5);
         player_invincible = false;
         sound_enabled = true;
         score_enabled = true;
@@ -893,7 +897,9 @@ void main(void) {
         break;
 
       case STATE_NEXT_STAGE:
-        level_number++;
+        if (level_number < 9) {
+          level_number++;
+        }
         lvl_p = level_specs + level_number - 1;
         intermission();
         next_game_state = STATE_PLAY;
