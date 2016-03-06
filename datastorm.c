@@ -87,6 +87,7 @@ unsigned char player_fire_delay;
 unsigned char player_current_lane, player_target_lane;
 unsigned char player_target_y;
 unsigned char player_looking_left;
+unsigned char player_move_x_sfx_counter;
 bool player_dead;
 bool player_invincible;
 
@@ -293,7 +294,7 @@ void move_shots() {
 
 void fire() {
   shot *p = shots + player_current_lane;
-  if (!p->flag) {
+  if (!p->flag && player_x == PLAYER_CENTER_X) {
     p->x = player_x;
     p->flag = player_looking_left ? SHOT_FLAG_LEFT : SHOT_FLAG_RIGHT;
 
@@ -647,6 +648,15 @@ void move_player_target_lane() {
   }
 }
 
+void play_horizontal_movement_sfx() {
+  if (!player_move_x_sfx_counter) {
+    PSGSFXPlay(player_move_psg, SFX_CHANNEL2);
+    player_move_x_sfx_counter = 32;
+  } else {
+    player_move_x_sfx_counter--;
+  }
+}
+
 void handle_player_movement() {
   joy = SMS_getKeysStatus();
 
@@ -662,9 +672,15 @@ void handle_player_movement() {
     if (enm_p->spd && enm_p->type == ENEMY_TYPE_PELLET || player_x != PLAYER_CENTER_X) {
       if ((joy & PORT_A_KEY_LEFT) && (player_x > ACTOR_MIN_X)) {
         player_x -= 4;
+        play_horizontal_movement_sfx();
       } else if ((joy & PORT_A_KEY_RIGHT) && (player_x < ACTOR_MAX_X)) {
         player_x += 4;
+        play_horizontal_movement_sfx();
+      } else {
+        player_move_x_sfx_counter = 0;
       }
+    } else {
+      player_move_x_sfx_counter = 0;
     }
 
     if (player_x == PLAYER_CENTER_X) {
