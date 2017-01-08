@@ -8,6 +8,8 @@ This is a Sega Master System clone of an Atari 2600 game named [Turmoil].
 
 I had originally made the first, unfinished, version for [SMS Power's 2012 competition][SMSPower-2012], then now, four years later, I decided to resume development on this for the [2016 competition][SMSPower-2016].
 
+Current version: [DataStorm-SMS-1.00]
+
 Instructions
 ------------
 
@@ -50,3 +52,4 @@ Tools used
 [Deflemask]: http://www.deflemask.com/
 [PSGTalk]: https://github.com/furrtek/PSGTalk
 [Emulicious]: http://emulicious.net/
+[DataStorm-SMS-1.00]: https://github.com/haroldo-ok/datastorm/releases/download/v1.00/DataStorm-SMS-1.00.zip
